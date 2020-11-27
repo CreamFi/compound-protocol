@@ -140,6 +140,9 @@ contract ComptrollerV5Storage is ComptrollerV4Storage {
     // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
     address public supplyCapGuardian;
 
+    // @notice protocols allowed to borrow and repay without collateral
+    mapping(address => bool) public protocols;
+
     // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
     mapping(address => uint) public supplyCaps;
 }
