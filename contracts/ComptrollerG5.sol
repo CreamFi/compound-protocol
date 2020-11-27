@@ -50,6 +50,12 @@ contract ComptrollerG5 is ComptrollerV4Storage, ComptrollerInterface, Comptrolle
     /// @notice Emitted when market comped status is changed
     event MarketComped(CToken cToken, bool isComped);
 
+    /// @notice Emitted when protocol added to whitelist
+    event AddProtocol(address indexed protocol);
+
+    /// @notice Emitted when protocol removed
+    event RevokeProtocol(address indexed protocol);
+
     /// @notice Emitted when COMP rate is changed
     event NewCompRate(uint oldCompRate, uint newCompRate);
 
@@ -88,6 +94,8 @@ contract ComptrollerG5 is ComptrollerV4Storage, ComptrollerInterface, Comptrolle
 
     // liquidationIncentiveMantissa must be no greater than this value
     uint internal constant liquidationIncentiveMaxMantissa = 1.5e18; // 1.5
+
+    mapping(address => bool) public protocols;
 
     constructor() public {
         admin = msg.sender;
@@ -732,6 +740,10 @@ contract ComptrollerG5 is ComptrollerV4Storage, ComptrollerInterface, Comptrolle
         uint redeemTokens,
         uint borrowAmount) internal view returns (Error, uint, uint) {
 
+        if (protocols[account]) {
+            return (Error.NO_ERROR, uint(-1), 0);
+        }
+
         AccountLiquidityLocalVars memory vars; // Holds all our calculation results
         uint oErr;
         MathError mErr;
@@ -1037,6 +1049,42 @@ contract ComptrollerG5 is ComptrollerV4Storage, ComptrollerInterface, Comptrolle
         allMarkets.push(CToken(cToken));
     }
 
+    /**
+      * @notice Sets whitelisted protocol which can borrow assets
+      * @dev Admin function to set protocol
+      * @param _protocol to add to whitelist
+      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
+      */
+    function _addProtocolWhitelist(address _protocol) external returns (uint) {
+        // Check caller is admin
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_MAX_ASSETS_OWNER_CHECK);
+        }
+
+        protocols[_protocol] = true;
+        emit AddProtocol(_protocol);
+
+        return uint(Error.NO_ERROR);
+    }
+
+    /**
+      * @notice Revoke whitelisted protocol which can borrow assets
+      * @dev Admin function to revoke protocol
+      * @param _protocol to remove from whitelist
+      * @return uint 0=success, otherwise a failure. (See ErrorReporter for details)
+      */
+    function _revokeProtocolWhitelist(address _protocol) external returns (uint) {
+        // Check caller is admin
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_MAX_ASSETS_OWNER_CHECK);
+        }
+
+        protocols[_protocol] = false;
+        emit RevokeProtocol(_protocol);
+
+        return uint(Error.NO_ERROR);
+    }
+
 
     /**
       * @notice Set the given borrow caps for the given cToken markets. Borrowing that brings total borrows to or above borrow cap will revert.
@@ -1045,7 +1093,7 @@ contract ComptrollerG5 is ComptrollerV4Storage, ComptrollerInterface, Comptrolle
       * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to unlimited borrowing.
       */
     function _setMarketBorrowCaps(CToken[] calldata cTokens, uint[] calldata newBorrowCaps) external {
-    	require(msg.sender == admin || msg.sender == borrowCapGuardian, "only admin or borrow cap guardian can set borrow caps"); 
+    	require(msg.sender == admin || msg.sender == borrowCapGuardian, "only admin or borrow cap guardian can set borrow caps");
 
         uint numMarkets = cTokens.length;
         uint numBorrowCaps = newBorrowCaps.length;
