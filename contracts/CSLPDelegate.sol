@@ -177,14 +177,7 @@ contract CSLPDelegate is CCapableErc20Delegate {
         EIP20Interface token = EIP20Interface(underlying);
         require(token.transferFrom(from, address(this), amount), "unexpected EIP-20 transfer in return");
 
-        // Deposit to masterChef.
-        IMasterChef(masterChef).deposit(pid, amount);
-
-        if (sushiBalance() > 0) {
-            // Send sushi rewards to SushiBar.
-            ISushiBar(sushiBar).enter(sushiBalance());
-        }
-
+        claimAndStakeSushi();
         updateSLPSupplyIndex();
         updateSupplierIndex(from);
 
@@ -200,11 +193,7 @@ contract CSLPDelegate is CCapableErc20Delegate {
         // Withdraw the underlying tokens from masterChef.
         IMasterChef(masterChef).withdraw(pid, amount);
 
-        if (sushiBalance() > 0) {
-            // Send sushi rewards to SushiBar.
-            ISushiBar(sushiBar).enter(sushiBalance());
-        }
-
+        claimAndStakeSushi();
         updateSLPSupplyIndex();
         updateSupplierIndex(to);
 
@@ -231,25 +220,31 @@ contract CSLPDelegate is CCapableErc20Delegate {
     }
 
     function updateSLPSupplyIndex() internal {
-        uint xSushiAccrued = sub_(xSushiBalance(), slpSupplyState.balance);
+        uint xSushiBalance = xSushiBalance();
+        uint xSushiAccrued = sub_(xSushiBalance, slpSupplyState.balance);
         uint supplyTokens = CToken(address(this)).totalSupply();
         Double memory ratio = supplyTokens > 0 ? fraction(xSushiAccrued, supplyTokens) : Double({mantissa: 0});
         Double memory index = add_(Double({mantissa: slpSupplyState.index}), ratio);
 
         // Update slpSupplyState.
         slpSupplyState.index = index.mantissa;
-        slpSupplyState.balance = xSushiBalance();
+        slpSupplyState.balance = xSushiBalance;
     }
 
     function updateSupplierIndex(address supplier) internal {
         Double memory supplyIndex = Double({mantissa: slpSupplyState.index});
         Double memory supplierIndex = Double({mantissa: slpSupplierIndex[supplier]});
+
+        // This is doing a storage write when it might not be necessary if
+        // afterwards deltaIndex == 0
         slpSupplierIndex[supplier] = supplyIndex.mantissa;
 
+        // cant you remove this? Can supplierIndex.mantissa be negative?
         if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
             supplierIndex.mantissa = sushiInitialIndex;
         }
 
+        // Delta can be 0. If so, you can just return without writing storage.
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
         uint supplierTokens = CToken(address(this)).balanceOf(supplier);
         uint supplierDelta = mul_(supplierTokens, deltaIndex);
