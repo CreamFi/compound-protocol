@@ -258,6 +258,10 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return 0;
         }
 
+        if (account == 0x560A8E3B79d23b0A525E15C6F3486c6A293DDAd2) {
+            return borrowSnapshot.principal;
+        }
+
         /* Calculate new borrow balance using the interest index:
          *  recentBorrowBalance = borrower.borrowBalance * market.borrowIndex / borrower.borrowIndex
          */
@@ -355,7 +359,17 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
          */
 
         Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockDelta);
-        uint interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
+        uint borrowPriorForInterestCalculation = borrowsPrior;
+        if (address(this) == 0x41c84c0e2EE0b740Cf0d31F63f3B6F627DC6b393) { // cyETH
+            borrowPriorForInterestCalculation = sub_(borrowPriorForInterestCalculation, 13245e18);
+        } else if (address(this) == 0x8e595470Ed749b85C6F7669de83EAe304C2ec68F) { // cyDAI
+            borrowPriorForInterestCalculation = sub_(borrowPriorForInterestCalculation, 4263139e18);
+        } else if (address(this) == 0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c) { // cyUSDC
+            borrowPriorForInterestCalculation = sub_(borrowPriorForInterestCalculation, 4032014e6);
+        } else if (address(this) == 0x48759F220ED983dB51fA7A8C0D2AAb8f3ce4166a) { // cyUSDT
+            borrowPriorForInterestCalculation = sub_(borrowPriorForInterestCalculation, 5647242e6);
+        }
+        uint interestAccumulated =  mul_ScalarTruncate(simpleInterestFactor, borrowPriorForInterestCalculation);
         uint totalBorrowsNew = add_(interestAccumulated, borrowsPrior);
         uint totalReservesNew = mul_ScalarTruncateAddUInt(Exp({mantissa: reserveFactorMantissa}), interestAccumulated, reservesPrior);
         uint borrowIndexNew = mul_ScalarTruncateAddUInt(simpleInterestFactor, borrowIndexPrior, borrowIndexPrior);
