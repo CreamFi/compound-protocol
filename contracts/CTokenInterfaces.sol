@@ -302,7 +302,8 @@ contract CErc20Interface is CErc20Storage {
     function _addReserves(uint addAmount) external returns (uint);
 }
 
-contract CWrappedNativeInterface is CErc20Interface {
+// CSupplyCapStorage is defined in the existing crWBNB. Add it back for backward compatibility.
+contract CWrappedNativeInterface is CErc20Interface, CSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */

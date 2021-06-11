@@ -221,6 +221,14 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
     }
 
     /**
+     * @notice Gulps excess contract cash to reserves
+     * @dev This function is defined in the existing crWBNB delegator. Add it back for consistency.
+     */
+    function gulp() external {
+        delegateAndReturn();
+    }
+
+    /**
      * @notice Flash loan funds to a given account.
      * @param receiver The receiver address for the funds
      * @param amount The amount of the funds to be loaned

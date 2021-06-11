@@ -249,6 +249,14 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         emit Flashloan(receiver, amount, totalFee, reservesFee);
     }
 
+    /**
+     * @notice Gulps excess contract cash to reserves
+     * @dev This function is defined in the existing crWBNB delegator. Add it back for consistency.
+     */
+    function gulp() external {
+        revert("deprecated method: gulp()");
+    }
+
     function () external payable {
         require(msg.sender == underlying, "only wrapped native contract could send native token");
     }

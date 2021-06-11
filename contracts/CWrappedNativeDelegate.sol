@@ -27,6 +27,14 @@ contract CWrappedNativeDelegate is CWrappedNative {
         }
 
         require(msg.sender == admin, "only the admin may call _becomeImplementation");
+
+        uint balance = BEP20Interface(underlying).balanceOf(address(this));
+        if (balance > 0) {
+            // Convert all the WBNB liquidity to native BNB.
+            WrappedNativeInterface(underlying).withdraw(balance);
+            // internalCash will not be used anymore.
+            internalCash = 0;
+        }
     }
 
     /**
