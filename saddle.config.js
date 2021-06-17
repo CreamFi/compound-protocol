@@ -253,7 +253,30 @@ module.exports = {
         {env: "ACCOUNT"},
         {file: "~/.ethereum/fantom"}
       ]
-    }
+    },
+    polygon: {
+      providers: [
+        {http: "https://rpc-mainnet.matic.quiknode.pro"}
+      ],
+      web3: {
+        gas: [
+          {env: "GAS"},
+          {default: "6000000"}
+        ],
+        gas_price: [
+          {env: "GAS_PRICE"},
+          {default: "3000000000"}
+        ],
+        options: {
+          transactionConfirmationBlocks: 1,
+          transactionBlockTimeout: 5
+        }
+      },
+      accounts: [
+        {env: "ACCOUNT"},
+        {file: "~/.ethereum/polygon"}
+      ]
+    },
   },
   get_network_file: (network) => {
     return null;
