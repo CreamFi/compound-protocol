@@ -1,7 +1,8 @@
 pragma solidity ^0.5.16;
 
 import "./CToken.sol";
-
+import "./ERC3156FlashBorrowerInterface.sol";
+import "./ERC3156FlashLenderInterface.sol";
 /**
  * @title Wrapped native token interface
  */
@@ -16,7 +17,7 @@ interface WrappedNativeInterface {
  * @notice CTokens which wrap the native token
  * @author Cream
  */
-contract CWrappedNative is CToken, CWrappedNativeInterface {
+contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderInterface{
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -210,17 +211,36 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         (uint err,) = liquidateBorrowInternal(borrower, msg.value, cTokenCollateral, true);
         require(err == 0, "liquidate borrow native failed");
     }
+    /**
+     * @notice Get the max flash loan amount
+     * @dev Compliant to ERC3156FlashLoanLenderInterface
+     * @param token target token to borrow, not used
+     */
+    function maxFlashLoan(
+        address token
+    ) external view returns (uint256) {
+        return getCashPrior();
+    }
+    /**
+     * @notice Get the flash loan fees
+     * @dev Compliant to ERC3156FlashLoanLenderInterface
+     * @param token target token to borrow, not used
+     * @param amount amount of token to borrow
+     */
+    function flashFee(address token, uint256 amount) external view returns (uint256) {
+        return div_(mul_(amount, flashFeeBips), 10000);
+    }
 
     /**
-     * @notice Flash loan funds to a given account.
-     * @param receiver The receiver address for the funds
-     * @param amount The amount of the funds to be loaned
-     * @param params The other parameters
+     * @notice Get the flash loan fees
+     * @dev Compliant to ERC3156FlashLoanLenderInterface
+     * @param token target token to borrow, not used
+     * @param amount amount of token to borrow
      */
-    function flashLoan(address payable receiver, uint amount, bytes calldata params) external nonReentrant {
+    function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external returns (bool) {
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
-        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), receiver, amount, params);
+        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data);
 
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
@@ -229,13 +249,16 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
 
         // 2. transfer ethers to receiver
-        receiver.transfer(amount);
+        address(uint160(address(receiver))).transfer(amount);
 
         // 3. update totalBorrows
         totalBorrows = add_(totalBorrows, amount);
 
         // 4. execute receiver's callback function
-        IFlashloanReceiver(receiver).executeOperation(msg.sender, address(0), amount, totalFee, params);
+        require(
+            receiver.onFlashLoan(msg.sender, address(0), amount, totalFee, data) == keccak256("ERC3156FlashBorrowerInterface.onFlashLoan"),
+            "IERC3156: Callback failed"
+        );
 
         // 5. check balance
         uint cashAfter = getCashPrior();
@@ -246,7 +269,18 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         totalReserves = add_(totalReserves, reservesFee);
         totalBorrows = sub_(totalBorrows, amount);
 
-        emit Flashloan(receiver, amount, totalFee, reservesFee);
+        emit Flashloan(address(receiver), amount, totalFee, reservesFee);
+        return true;
+    }
+    /**
+     * @notice Flash loan funds to a given account.
+     * @param receiver The receiver address for the funds
+     * @param amount The amount of the funds to be loaned
+     * @param params The other parameters
+     */
+    function flashLoan(address payable receiver, uint amount, bytes calldata params) external nonReentrant {
+
+        this.flashLoan(ERC3156FlashBorrowerInterface(receiver), address(this), uint256(amount), params);
     }
 
     function () external payable {
