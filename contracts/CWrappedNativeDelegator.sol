@@ -223,14 +223,15 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
     /**
      * @notice Flash loan funds to a given account.
      * @param receiver The receiver address for the funds
+     * @param token token to borrow
      * @param amount The amount of the funds to be loaned
-     * @param params The other parameters
+     * @param data The other data
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function flashLoan(address payable receiver, uint amount, bytes calldata params) external {
-        receiver; amount; params; // Shh
-        delegateAndReturn();
-    }
+     function flashLoan( ERC3156FlashBorrowerInterface receiver, address token, uint256 amount, bytes calldata data) external returns (bool) {
+         receiver; token; amount; data; // Shh
+         delegateAndReturn();
+     }
 
     /**
      * @notice Transfer `amount` tokens from `msg.sender` to `dst`
