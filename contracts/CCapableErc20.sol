@@ -130,6 +130,45 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         internalCash = cashOnChain;
     }
 
+    /**
+     * @notice Flash loan funds to a given account.
+     * @param receiver The receiver address for the funds
+     * @param amount The amount of the funds to be loaned
+     * @param params The other parameters
+     */
+    function flashLoan(address receiver, uint amount, bytes calldata params) external nonReentrant {
+        require(amount > 0, "flashLoan amount should be greater than zero");
+        require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
+
+        uint cashOnChainBefore = getCashOnChain();
+        uint cashBefore = getCashPrior();
+        require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
+
+        // 1. calculate fee, 1 bips = 1/10000
+        uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
+
+        // 2. transfer fund to receiver
+        doTransferOut(address(uint160(receiver)), amount, false);
+
+        // 3. update totalBorrows
+        totalBorrows = add_(totalBorrows, amount);
+
+        // 4. execute receiver's callback function
+        IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
+
+        // 5. check balance
+        uint cashOnChainAfter = getCashOnChain();
+        require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
+
+        // 6. update reserves and internal cash and totalBorrows
+        uint reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
+        totalReserves = add_(totalReserves, reservesFee);
+        internalCash = add_(cashBefore, totalFee);
+        totalBorrows = sub_(totalBorrows, amount);
+
+        emit Flashloan(receiver, amount, totalFee, reservesFee);
+    }
+
     /*** Safe Token ***/
 
     /**
