@@ -401,3 +401,12 @@ contract CDelegateInterface {
      */
     function _resignImplementation() public;
 }
+
+/*** External interface ***/
+
+/**
+ * @title Flash loan receiver interface
+ */
+interface IFlashloanReceiver {
+    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external;
+}
