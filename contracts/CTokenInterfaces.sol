@@ -345,8 +345,8 @@ contract CCapableErc20Interface is CErc20Interface, CSupplyCapStorage {
 
     /*** User Interface ***/
 
-    function gulp() external;    
-    // function flashLoan(ERC3156FlashBorrowerInterface receiver, address token, uint256 amount,bytes calldata data) external returns (bool);
+    function gulp() external;
+    function flashLoan(address receiver, uint amount, bytes calldata params) external;
 }
 
 contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapStorage {
