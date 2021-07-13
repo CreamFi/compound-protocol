@@ -8,7 +8,7 @@ import "./ERC3156FlashBorrowerInterface.sol";
  * @notice CTokens which wrap an EIP-20 underlying with collateral cap
  * @author Cream
  */
-contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface, ERC3156FlashLenderInterface {
+contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
