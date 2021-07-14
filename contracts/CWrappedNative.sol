@@ -219,8 +219,8 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
     function maxFlashLoan(
         address token
     ) external view returns (uint256) {
-        require (token == address(this), "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(token);
+        require (token == underlying, "token address is not the same as this address");
+        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(address(this));
     }
     /**
      * @notice Get the flash loan fees
@@ -229,18 +229,18 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
      * @param amount amount of token to borrow
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
-        require (token == address(this), "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(token, amount);
+        require (token == underlying, "token address is not the same as this address");
+        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(address(this), amount);
     }
 
     /**
      * @notice Get the flash loan fees
      * @dev Compliant to ERC3156FlashLoanLenderInterface
-     * @param token target token to borrow, not used
+     * @param token target token to borrow
      * @param amount amount of token to borrow
      */
     function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external nonReentrant returns (bool) {
-        require(token == address(this), "token address is not the same as this address");
+        require(token == underlying, "token address is not the same as this address");
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
         require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashlown not allowed");
@@ -264,7 +264,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
         );
 
         // 5. check balance
-        // require(ERC20(token).transferFrom(address(uint160(address(receiver))), totalFee), "Transfer fund back failed");
+    
 
         uint cashAfter = getCashPrior();
         require(cashAfter == add_(cashBefore, totalFee), "BALANCE_INCONSISTENT");

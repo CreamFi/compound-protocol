@@ -149,8 +149,8 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     function maxFlashLoan(
         address token
     ) external view returns (uint256) {
-        require (token == address(this), "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(token);
+        require (token == underlying, "token address is not the same as this address");
+        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(address(this));
     }
 
     /**
@@ -160,8 +160,8 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
-        require (token == address(this), "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(token, amount);
+        require (token == underlying, "token address is not the same as this address");
+        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(address(this), amount);
     }
 
     /**
@@ -171,7 +171,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      */
     function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external nonReentrant returns (bool) {
-        require(token == address(this), "token address is not the same as this address");
+        require(token == underlying, "token address is not the same as this address");
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
         require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashLoan not allowed");
@@ -194,7 +194,9 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
             "IERC3156: Callback failed"
         );
 
-        // 5. check balance
+        // 5. take amount + fee from receiver, then check balance
+        require(EIP20Interface(underlying).transferFrom(address(uint160(address(receiver))), address(this), amount), "failed to pay back flashloan");
+        
         uint cashOnChainAfter = getCashOnChain();
         require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
 
