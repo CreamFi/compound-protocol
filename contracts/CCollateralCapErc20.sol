@@ -149,8 +149,12 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     function maxFlashLoan(
         address token
     ) external view returns (uint256) {
-        require (token == underlying, "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(address(this));
+        require (token == underlying, "the intended borrow token is not the underlying token of this market");
+        uint256 amount = 0;
+        if (ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, "")){
+            amount = getCashPrior();
+        }
+        return amount;
     }
 
     /**
@@ -160,8 +164,10 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
-        require (token == underlying, "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(address(this), amount);
+        require (token == underlying, "the intended borrow token is not the underlying token of this market");
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""), "flashLoan not allowed");
+        return div_(mul_(amount, flashFeeBips), 10000);
+        
     }
 
     /**
@@ -180,7 +186,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
         // 1. calculate fee, 1 bips = 1/10000
-        uint totalFee = flashFee(token, amount);
+        uint256 totalFee = this.flashFee(token, amount);
 
         // 2. transfer fund to receiver
         doTransferOut(address(uint160(address(receiver))), amount, false);

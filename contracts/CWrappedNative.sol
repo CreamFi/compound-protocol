@@ -219,8 +219,12 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
     function maxFlashLoan(
         address token
     ) external view returns (uint256) {
-        require (token == underlying, "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(address(this));
+        require (token == address(0), "the intended borrow token is not the underlying token of this market");
+        uint256 amount = 0;
+        if (ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, "")){
+            amount = getCashPrior();
+        }
+        return amount;
     }
     /**
      * @notice Get the flash loan fees
@@ -229,8 +233,9 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
      * @param amount amount of token to borrow
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
-        require (token == underlying, "token address is not the same as this address");
-        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(address(this), amount);
+        require (token == address(0), "token address is not the same as this address");
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""), "flashLoan not allowed");
+        return div_(mul_(amount, flashFeeBips), 10000);
     }
 
     /**
@@ -249,7 +254,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
         // 1. calculate fee, 1 bips = 1/10000
-        uint totalFee = flashFee(token, amount);
+        uint totalFee = this.flashFee(token, amount);
 
         // 2. transfer ethers to receiver
         address(uint160(address(receiver))).transfer(amount);
