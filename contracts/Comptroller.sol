@@ -674,8 +674,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @param amount The amount of the tokens
      * @param params The other parameters
      */
-    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external {
-        require(!flashloanGuardianPaused[cToken], "flashloan is paused");
+    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external returns (bool){
+        return !flashloanGuardianPaused[cToken];
 
         // Shh - currently unused
         receiver;
@@ -693,7 +693,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     ) external view returns (uint256) {
         uint256 amount = 0;
         bool paused = flashloanGuardianPaused[cToken];
-        if (!paused && markets[cToken].isListed){
+        bool allowed = flashloanAllowed(cToken, address(0), 0, bytes(0));
+        if (allowed && markets[cToken].isListed){
             amount = markets[cToken].getCashPrior();
         }
         return amount

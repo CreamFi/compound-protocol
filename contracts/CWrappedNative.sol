@@ -240,7 +240,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
     function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external nonReentrant returns (bool) {
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
-        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data);
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data) == true, "flashlown not allowed");
 
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
