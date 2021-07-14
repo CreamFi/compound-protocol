@@ -18,8 +18,6 @@ contract FlashloanReceiver is ERC3156FlashBorrowerInterface{
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
         totalBorrows = CCollateralCapErc20(cToken).totalBorrows();
         CCollateralCapErc20(cToken).flashLoan(this, borrowToken, borrowAmount, data);
-        uint balanceAfter = ERC20(borrowToken).balanceOf(address(this));
-        require(balanceAfter == balanceBefore.add(borrowAmount).sub(repayAmount), "Balance inconsistent");
     }
 
     function onFlashLoan(
@@ -120,7 +118,7 @@ contract FlashloanReceiverNative is ERC3156FlashBorrowerInterface {
         uint balanceBefore = address(this).balance;
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
         totalBorrows = CWrappedNative(cToken).totalBorrows();
-        CWrappedNative(cToken).flashLoan(this,address(0), borrowAmount, data);
+        CWrappedNative(cToken).flashLoan(this, address(0), borrowAmount, data);
         uint balanceAfter = address(this).balance;
         require(balanceAfter == balanceBefore.add(borrowAmount).sub(repayAmount), "Balance inconsistent");
     }

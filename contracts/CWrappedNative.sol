@@ -234,7 +234,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
         require (token == address(0), "token address is not the same as this address");
-        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""), "flashLoan not allowed");
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""), "flashloan is paused");
         return div_(mul_(amount, flashFeeBips), 10000);
     }
 
@@ -245,10 +245,10 @@ contract CWrappedNative is CToken, CWrappedNativeInterface, ERC3156FlashLenderIn
      * @param amount amount of token to borrow
      */
     function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external nonReentrant returns (bool) {
-        require(token == underlying, "token address is not the same as this address");
+        require(token == address(0), "token address is not the same as this address");
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
-        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashlown not allowed");
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashloan is paused");
 
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");

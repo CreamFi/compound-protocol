@@ -165,7 +165,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
         require (token == underlying, "the intended borrow token is not the underlying token of this market");
-        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""), "flashLoan not allowed");
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""), "flashloan is paused");
         return div_(mul_(amount, flashFeeBips), 10000);
         
     }
@@ -180,7 +180,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
         require(token == underlying, "token address is not the same as this address");
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
-        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashLoan not allowed");
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashloan is paused");
         uint cashOnChainBefore = getCashOnChain();
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
@@ -201,7 +201,8 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
         );
 
         // 5. take amount + fee from receiver, then check balance
-        require(EIP20Interface(underlying).transferFrom(address(uint160(address(receiver))), address(this), amount), "failed to pay back flashloan");
+        uint repaymentAmount = add_(amount, totalFee);
+        require(EIP20Interface(underlying).transferFrom(address(uint160(address(receiver))), address(this), repaymentAmount), "failed to pay back flashloan");
         
         uint cashOnChainAfter = getCashOnChain();
         require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
