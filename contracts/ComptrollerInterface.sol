@@ -79,4 +79,6 @@ interface ComptrollerInterfaceExtension {
     function updateCTokenVersion(address cToken, ComptrollerV2Storage.Version version) external;
 
     function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external;
+
+    function maxFlashLoan(address token) external view returns (uint256);
 }

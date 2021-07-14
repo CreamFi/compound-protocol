@@ -149,8 +149,9 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     function maxFlashLoan(
         address token
     ) external view returns (uint256) {
-        return getCashPrior();
+        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(address(this));
     }
+
     /**
      * @notice Get the flash loan fees
      * @dev Compliant to ERC3156FlashLoanLenderInterface
@@ -186,7 +187,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
 
         // 4. execute receiver's callback function
         require(
-            receiver.onFlashLoan(address(uint160(address(receiver))), token, amount, totalFee, data) == keccak256("ERC3156FlashBorrowerInterface.onFlashLoan"),
+            receiver.onFlashLoan(msg.sender, token, amount, totalFee, data) == keccak256("ERC3156FlashBorrowerInterface.onFlashLoan"),
             "IERC3156: Callback failed"
         );
 

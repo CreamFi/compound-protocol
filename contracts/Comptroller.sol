@@ -684,6 +684,21 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     }
 
     /**
+     * @notice Get the max flash loan amount
+     * @dev Compliant to ERC3156FlashLoanLenderInterface
+     * @param token target token to borrow, not used
+     */
+    function maxFlashLoan(
+        address cToken
+    ) external view returns (uint256) {
+        uint256 amount = 0;
+        if (markets[cToken].isListed){
+            amount = markets[cToken].getCashPrior();
+        }
+        return amount
+    }
+
+    /**
      * @notice Update CToken's version.
      * @param cToken Version of the asset being updated
      * @param newVersion The new version
