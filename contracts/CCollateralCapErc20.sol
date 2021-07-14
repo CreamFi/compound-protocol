@@ -149,7 +149,8 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     function maxFlashLoan(
         address token
     ) external view returns (uint256) {
-        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(address(this));
+        require (token == address(this), "token address is not the same as this address");
+        return ComptrollerInterfaceExtension(address(comptroller)).maxFlashLoan(token);
     }
 
     /**
@@ -159,7 +160,8 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      */
     function flashFee(address token, uint256 amount) external view returns (uint256) {
-        return div_(mul_(amount, flashFeeBips), 10000);
+        require (token == address(this), "token address is not the same as this address");
+        return ComptrollerInterfaceExtension(address(comptroller)).flashFee(token, amount);
     }
 
     /**
@@ -171,7 +173,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external nonReentrant returns (bool) {
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
-        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data);
+        require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashLoan not allowed");
         uint cashOnChainBefore = getCashOnChain();
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");

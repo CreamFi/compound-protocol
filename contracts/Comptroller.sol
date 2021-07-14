@@ -693,11 +693,20 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     ) external view returns (uint256) {
         uint256 amount = 0;
         bool paused = flashloanGuardianPaused[cToken];
-        bool allowed = flashloanAllowed(cToken, address(0), 0, bytes(0));
-        if (allowed && markets[cToken].isListed){
+        if (flashloanAllowed(cToken, address(0), 0, bytes(0))){
             amount = markets[cToken].getCashPrior();
         }
         return amount
+    }
+    /**
+     * @notice Get the flash loan fees
+     * @dev Compliant to ERC3156FlashLoanLenderInterface
+     * @param token target token to borrow, not used
+     * @param amount amount of token to borrow
+     */ 
+    function flashFee(address token, uint256 amount) external view returns (uint256) {
+        require(flashloanAllowed(token, address(0), amount, bytes(0)), "flashLoan not allowed");
+        return div_(mul_(amount, CToken(token).flashFeeBips), 10000);
     }
 
     /**
