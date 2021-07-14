@@ -12,8 +12,9 @@ contract FlashloanReceiver is ERC3156FlashBorrowerInterface{
     uint totalBorrows;
 
     function doFlashloan(address cToken, uint borrowAmount, uint repayAmount) external {
-        uint balanceBefore = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
         address underlyingToken = CCollateralCapErc20(cToken).underlying();
+        ERC20(underlyingToken).approve(cToken, repayAmount);       
+        uint balanceBefore = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
         totalBorrows = CCollateralCapErc20(cToken).totalBorrows();
         CCollateralCapErc20(cToken).flashLoan(this, underlyingToken, borrowAmount, data);
@@ -43,6 +44,9 @@ contract FlashloanAndMint is ERC3156FlashBorrowerInterface {
     uint totalBorrows;
 
     function doFlashloan(address cToken, uint borrowAmount) external {
+        address underlyingToken = CCollateralCapErc20(cToken).underlying();
+        ERC20(underlyingToken).approve(cToken, repayAmount);       
+
         bytes memory data = abi.encode(cToken);
         address underlyingAddress = CCollateralCapErc20(cToken).underlying();
         CCollateralCapErc20(cToken).flashLoan(this, underlyingAddress, borrowAmount, data);
@@ -65,6 +69,9 @@ contract FlashloanAndRepayBorrow is ERC3156FlashBorrowerInterface {
     using SafeMath for uint256;
 
     function doFlashloan(address cToken, uint borrowAmount) external {
+        address underlyingToken = CCollateralCapErc20(cToken).underlying();
+        ERC20(underlyingToken).approve(cToken, repayAmount);       
+
         bytes memory data = abi.encode(cToken);
         CCollateralCapErc20(cToken).flashLoan(this,CCollateralCapErc20(cToken).underlying(), borrowAmount, data);
     }
@@ -86,6 +93,9 @@ contract FlashloanTwice is ERC3156FlashBorrowerInterface {
     using SafeMath for uint256;
 
     function doFlashloan(address cToken, uint borrowAmount) external {
+        address underlyingToken = CCollateralCapErc20(cToken).underlying();
+        ERC20(underlyingToken).approve(cToken, repayAmount);       
+        
         bytes memory data = abi.encode(cToken);
         CCollateralCapErc20(cToken).flashLoan(this, CCollateralCapErc20(cToken).underlying(), borrowAmount, data);
     }
