@@ -171,6 +171,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @param amount amount of token to borrow
      */
     function flashLoan(ERC3156FlashBorrowerInterface receiver, address token,uint256 amount,bytes calldata data) external nonReentrant returns (bool) {
+        require(token == address(this), "token address is not the same as this address");
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
         require(ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(receiver), amount, data), "flashLoan not allowed");
@@ -179,7 +180,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
         // 1. calculate fee, 1 bips = 1/10000
-        uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
+        uint totalFee = flashFee(token, amount);
 
         // 2. transfer fund to receiver
         doTransferOut(address(uint160(address(receiver))), amount, false);
