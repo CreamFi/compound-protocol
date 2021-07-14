@@ -674,14 +674,10 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @param amount The amount of the tokens
      * @param params The other parameters
      */
-    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external {
-        require(!flashloanGuardianPaused[cToken], "flashloan is paused");
-
-        // Shh - currently unused
-        receiver;
-        amount;
-        params;
+    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external view returns (bool){
+        return !flashloanGuardianPaused[cToken];
     }
+
 
     /**
      * @notice Update CToken's version.

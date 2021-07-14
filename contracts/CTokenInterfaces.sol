@@ -2,7 +2,7 @@ pragma solidity ^0.5.16;
 
 import "./ComptrollerInterface.sol";
 import "./InterestRateModel.sol";
-
+import "./ERC3156FlashBorrowerInterface.sol";
 contract CTokenStorage {
     /**
      * @dev Guard variable for re-entrancy checks
@@ -323,7 +323,7 @@ contract CWrappedNativeInterface is CErc20Interface {
     function repayBorrowNative() external payable returns (uint);
     function repayBorrowBehalfNative(address borrower) external payable returns (uint);
     function liquidateBorrowNative(address borrower, CTokenInterface cTokenCollateral) external payable returns (uint);
-    function flashLoan(address payable receiver, uint amount, bytes calldata params) external;
+    function flashLoan(ERC3156FlashBorrowerInterface receiver,address token,uint256 amount,bytes calldata data) external returns (bool);
 
     /*** Admin Functions ***/
 
@@ -346,7 +346,6 @@ contract CCapableErc20Interface is CErc20Interface, CSupplyCapStorage {
     /*** User Interface ***/
 
     function gulp() external;
-    function flashLoan(address receiver, uint amount, bytes calldata params) external;
 }
 
 contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapStorage {
@@ -371,6 +370,8 @@ contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapS
     /*** Admin Functions ***/
 
     function _setCollateralCap(uint newCollateralCap) external;
+
+    function flashLoan(ERC3156FlashBorrowerInterface receiver,address token,uint256 amount,bytes calldata data) external returns (bool);
 }
 
 contract CDelegatorInterface {

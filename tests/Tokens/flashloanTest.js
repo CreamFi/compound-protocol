@@ -101,17 +101,6 @@ describe('Flashloan test', function () {
       await expect(result).rejects.toRevert('revert INSUFFICIENT_LIQUIDITY')
     })
 
-    it('repay not enough', async () => {
-      const borrowAmount = 100000;
-      const result = send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount])
-      await expect(result).rejects.toRevert('revert BALANCE_INCONSISTENT')
-    })
-
-    it('repay too much', async () => {
-      const borrowAmount = 100;
-      const result = send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + 100])
-      await expect(result).rejects.toRevert('revert BALANCE_INCONSISTENT')
-    })
 
   });
 
@@ -190,18 +179,6 @@ describe('Flashloan test', function () {
       const totalFee = 3
       const result = send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + totalFee])
       await expect(result).rejects.toRevert('revert INSUFFICIENT_LIQUIDITY')
-    })
-
-    it('repay not enough', async () => {
-      const borrowAmount = 100000;
-      const result = send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount])
-      await expect(result).rejects.toRevert('revert BALANCE_INCONSISTENT')
-    })
-
-    it('repay too much', async () => {
-      const borrowAmount = 100;
-      const result = send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + 100])
-      await expect(result).rejects.toRevert('revert BALANCE_INCONSISTENT')
     })
   })
 
