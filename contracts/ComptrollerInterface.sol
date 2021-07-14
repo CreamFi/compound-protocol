@@ -81,4 +81,6 @@ interface ComptrollerInterfaceExtension {
     function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external;
 
     function maxFlashLoan(address token) external view returns (uint256);
+
+    function flashFee(address token, uint256 amount) external view returns (uint256);
 }

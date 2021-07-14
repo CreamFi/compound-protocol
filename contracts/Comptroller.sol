@@ -692,7 +692,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         address cToken
     ) external view returns (uint256) {
         uint256 amount = 0;
-        if (markets[cToken].isListed){
+        bool paused = flashloanGuardianPaused[cToken];
+        if (!paused && markets[cToken].isListed){
             amount = markets[cToken].getCashPrior();
         }
         return amount
