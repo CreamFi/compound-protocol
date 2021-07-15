@@ -156,8 +156,12 @@ contract CErc20 is CToken, CErc20Interface {
                     returndatacopy(0, 0, 32)
                     success := mload(0)        // Set `success = returndata` of external call
                 }
-                default {                      // This is an excessively non-compliant ERC-20, revert.
-                    revert(0, 0)
+                default {
+                    if lt(returndatasize(), 32) {
+                        revert(0, 0)           // This is a non-compliant ERC-20, revert.
+                    }
+                    returndatacopy(0, 0, 32)   // Vyper compiler before 0.2.8 will not truncate RETURNDATASIZE.
+                    success := mload(0)        // See here: https://github.com/vyperlang/vyper/security/advisories/GHSA-375m-5fvv-xq23
                 }
         }
         require(success, "TOKEN_TRANSFER_IN_FAILED");
@@ -185,15 +189,19 @@ contract CErc20 is CToken, CErc20Interface {
         bool success;
         assembly {
             switch returndatasize()
-                case 0 {                      // This is a non-standard ERC-20
+                case 0 {                       // This is a non-standard ERC-20
                     success := not(0)          // set success to true
                 }
-                case 32 {                     // This is a complaint ERC-20
+                case 32 {                      // This is a compliant ERC-20
                     returndatacopy(0, 0, 32)
                     success := mload(0)        // Set `success = returndata` of external call
                 }
-                default {                     // This is an excessively non-compliant ERC-20, revert.
-                    revert(0, 0)
+                default {
+                    if lt(returndatasize(), 32) {
+                        revert(0, 0)           // This is a non-compliant ERC-20, revert.
+                    }
+                    returndatacopy(0, 0, 32)   // Vyper compiler before 0.2.8 will not truncate RETURNDATASIZE.
+                    success := mload(0)        // See here: https://github.com/vyperlang/vyper/security/advisories/GHSA-375m-5fvv-xq23
                 }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
